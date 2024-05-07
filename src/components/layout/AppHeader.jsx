@@ -1,5 +1,8 @@
-import { Button, Layout, Select, Space } from 'antd';
+import { Button, Layout, Select, Space, Modal, Drawer } from 'antd';
 import { useCrypto } from '../../context/crypto-context';
+import { useEffect, useState} from 'react';
+import { CoinModalInfo } from '../CoinModalInfo';
+import { AddAssetForm } from '../AddAssetForm';
 
 const headerStyle = {
     width: '100%',
@@ -11,44 +14,37 @@ const headerStyle = {
     alignItems: 'center',
 }
 
-const handleChange = (value) => {
-    console.log(`selected ${value}`);
-}
-const options = [
-    {
-        label: 'China',
-        value: 'china',
-        emoji: '🇨🇳',
-        desc: 'China (中国)',
-    },
-    {
-        label: 'USA',
-        value: 'usa',
-        emoji: '🇺🇸',
-        desc: 'USA (美国)',
-    },
-    {
-        label: 'Japan',
-        value: 'japan',
-        emoji: '🇯🇵',
-        desc: 'Japan (日本)',
-    },
-    {
-        label: 'Korea',
-        value: 'korea',
-        emoji: '🇰🇷',
-        desc: 'Korea (韩国)',
-    },
-];
-
 export const AppHeader = () => {
+    const [select, setSelect] = useState(false)
+    const [modal, setModal] = useState(false)
+    const [coin, setCoin] = useState(null)
+    const [drawer, setDrawer] = useState(false)
+    useEffect(() => {
+        const keypress = event => {
+            if (event.key === '/') {
+                setSelect((prev) => !prev)
+            }
+        }
+        document.addEventListener('keypress', keypress)
+        return () => document.removeEventListener('keypress', keypress)
+    }, [])
+
     const { crypto } = useCrypto()
+
+    function handleSelect (value) {
+        setCoin(crypto.find((c) => c.id === value))
+        setModal(true)
+    }
+
     return (
         <Layout.Header style={headerStyle}>
             <Select
                 style={{
                     width: 250
                 }}
+                onSelect={handleSelect}
+                open={select}
+                onClick={() => setSelect((prev) => !prev)}
                 value='press / to open'
                 options={crypto.map((coin) => ({
                     label: coin.name,
@@ -61,7 +57,23 @@ export const AppHeader = () => {
                     </Space>
                 )}
             />
-            <Button type='primary'>Add Assets</Button>
+            <Button onClick={() => setDrawer(true)} type='primary'>Add Assets</Button>
+
+            <Modal
+                open={modal}
+                onCancel={() => setModal(false)}
+                footer={null}
+            >
+                <CoinModalInfo coin={coin} />
+            </Modal>
+            <Drawer
+                title="Add Asset"
+                onClose={() => setDrawer(false)}
+                open={drawer}
+                width={600}
+            >
+                <AddAssetForm />
+            </Drawer>
         </Layout.Header>
     )
 }
