@@ -1,3 +1,5 @@
+// https://openapi.coinstats.app/
+
 export const cryptoData = {
   result: [
     {
@@ -620,12 +622,6 @@ export const cryptoAssets = [
     id: 'ethereum',
     amount: 5,
     price: 2400,
-    date: new Date(),
-  },
-  {
-    id: 'litecoin',
-    amount: 65,
-    price: 65,
     date: new Date(),
   },
 ]
