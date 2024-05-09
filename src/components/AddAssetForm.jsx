@@ -1,12 +1,41 @@
-import { Button, DatePicker, Divider, Flex, Form, InputNumber, Select, Space, Typography } from "antd"
-import { useState } from "react"
+import { Button, DatePicker, Result, Divider, Flex, Form, InputNumber, Select, Space, Typography } from "antd"
+import { useRef, useState } from "react"
 import { useCrypto } from "../context/crypto-context"
+import { CoinInfo } from "./CoinInfo"
+
+const validateMessage = {
+  required: '${label} is required',
+  types: {
+    number: '${label} in not valid number'
+  },
+  number: {
+    range: '${label} must between ${min} and ${max}'
+  }
+}
 
 
-
-export const AddAssetForm = () => {
-  const { crypto } = useCrypto()
+export const AddAssetForm = ({ onClose }) => {
+  const [form] = Form.useForm()
+  const { crypto, addAsset } = useCrypto()
+  const [submitted, setSubmitted] = useState(false)
   const [coin, setCoin] = useState(null)
+  const assetRef = useRef()
+
+  if (submitted) {
+    return (
+      <Result
+        status="success"
+        title="New Asset Added"
+        subTitle={`Added ${assetRef.current.amount} of ${coin.name} by price ${assetRef.current.price}`}
+        extra={[
+          <Button type="primary" key="console" onClick={onClose}>
+            Close
+          </Button>,
+
+        ]}
+      />
+    )
+  }
 
   if (!coin) {
     return (
@@ -31,26 +60,35 @@ export const AddAssetForm = () => {
   }
 
   const onFinish = (values) => {
-    console.log('Success:', values);
-  };
-  const onFinishFailed = (errorInfo) => {
-    console.log('Failed:', errorInfo);
+    const newAsset = {
+      id: coin.id,
+      amount: values.amount, 
+      price: values.price,
+      date: values.date?.$d ?? new Date()
+    }
+    assetRef.current = newAsset 
+    addAsset(newAsset)
+    setSubmitted(true)
   };
 
+  const handleAmountChange = (value) => {
+    const price = form.getFieldValue('price')
+    form.setFieldsValue({
+      total: +(value * price).toFixed(2)
+    })
+  }
+
+  const handlePriceChange = (value) => {
+    const amount = form.getFieldValue('amount')
+    form.setFieldsValue({
+      total: +(amount * value).toFixed(2)
+    })
+  }
+
   return (
-    <form>
-      <Flex align='center'>
-        <img
-          src={coin.icon}
-          alt={coin.name}
-          style={{ width: '40px', marginRight: '10px' }}
-        />
-        <Typography.Title level={2} style={{ margin: 0 }}>
-          {coin.name}
-        </Typography.Title>
-      </Flex>
-      <Divider />
+    <>
       <Form
+        form={form}
         name="basic"
         labelCol={{
           span: 4,
@@ -61,9 +99,15 @@ export const AddAssetForm = () => {
         style={{
           maxWidth: 600,
         }}
-        initialValues={{}}
+        initialValues={{
+          price: +coin.price.toFixed(2)
+        }}
         onFinish={onFinish}
+        validateMessages={validateMessage}
       >
+        <CoinInfo coin={coin} />
+        <Divider />
+
         <Form.Item
           label="Amount"
           name="amount"
@@ -72,18 +116,21 @@ export const AddAssetForm = () => {
               required: true,
               type: 'number',
               min: 0,
-              message: 'Please input your username!',
             },
           ]}
         >
-          <InputNumber style={{width: '100%'}} />
+          <InputNumber
+            placeholder="Enter coin amount"
+            onChange={handleAmountChange}
+            style={{ width: '100%' }}
+          />
         </Form.Item>
 
         <Form.Item
           label="Price"
           name="price"
         >
-          <InputNumber disabled style={{width: '100%'}} />
+          <InputNumber onChange={handlePriceChange} style={{ width: '100%' }} />
         </Form.Item>
 
         <Form.Item
@@ -96,9 +143,9 @@ export const AddAssetForm = () => {
           label="Total"
           name="total"
         >
-          <InputNumber disabled style={{width: '100%'}} />
+          <InputNumber disabled style={{ width: '100%' }} />
         </Form.Item>
-        
+
 
         <Form.Item>
           <Button type="primary" htmlType="submit">
@@ -106,6 +153,6 @@ export const AddAssetForm = () => {
           </Button>
         </Form.Item>
       </Form>
-    </form>
+    </>
   )
 }
